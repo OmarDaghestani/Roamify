@@ -3,5 +3,8 @@ dist/
 build/
 .env
 .env.local
+client/.env
+client/.env.local
 *.log
 .DS_Store
+.cursorrules

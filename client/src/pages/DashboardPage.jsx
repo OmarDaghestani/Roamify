@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { api } from "../api.js";
 import { useAuth } from "../auth/AuthContext.jsx";
@@ -28,7 +28,13 @@ export default function DashboardPage() {
     load();
   }, [load]);
 
-  const latestTripId = trips[0]?._id;
+  const sortedTrips = useMemo(() => {
+    const open = trips.filter((t) => t.status !== "archived");
+    const archived = trips.filter((t) => t.status === "archived");
+    return [...open, ...archived];
+  }, [trips]);
+
+  const latestTripId = sortedTrips.find((t) => t.status !== "archived")?._id || sortedTrips[0]?._id;
 
   async function createTrip() {
     setError("");
@@ -58,7 +64,7 @@ export default function DashboardPage() {
         </div>
         <div className="dashboard-hero-scrim" aria-hidden />
         <div className="dashboard-hero-inner">
-          <p className="dashboard-eyebrow">Travel MVP</p>
+          <p className="dashboard-eyebrow">Roamify</p>
           <h1 className="dashboard-title">Your journeys</h1>
           <p className="dashboard-lede">
             Curate escapes, set your compass on budget, and let the planner weave weather, FX, and
@@ -76,7 +82,13 @@ export default function DashboardPage() {
       <div className="dashboard-content">
         <div className="dashboard-layout">
           <div className="dashboard-main">
-            {loading ? <p className="dashboard-muted">Gathering your itineraries…</p> : null}
+            {loading ? (
+              <div className="dashboard-skeleton-grid" aria-hidden>
+                <div className="dashboard-sk-card" />
+                <div className="dashboard-sk-card" />
+                <div className="dashboard-sk-card" />
+              </div>
+            ) : null}
             {error ? <p className="error">{error}</p> : null}
 
             {!loading && trips.length === 0 ? (
@@ -84,8 +96,15 @@ export default function DashboardPage() {
                 <div className="dashboard-empty-map" aria-hidden />
                 <h2 className="dashboard-empty-title">The map is yours</h2>
                 <p className="dashboard-muted dashboard-empty-copy">
-                  Start a journey to set dates, define your budget cap, and open the concierge planner.
+                  Follow the steps below once, then every new journey picks up your defaults automatically.
                 </p>
+                <ol className="dashboard-steps">
+                  <li>
+                    Open <Link to="/settings">Settings</Link> and set home currency plus default trip budget.
+                  </li>
+                  <li>Create a journey and add dates, origin, and budget in trip constraints.</li>
+                  <li>Open <strong>Planner chat</strong> and ask for destinations within budget.</li>
+                </ol>
                 <button type="button" className="btn btn-new-trip btn-new-trip--inline" onClick={createTrip}>
                   <span className="btn-new-trip-glow" aria-hidden />
                   <span className="btn-new-trip-inner">Begin your first journey</span>
@@ -95,14 +114,24 @@ export default function DashboardPage() {
 
             {!loading && trips.length > 0 ? (
               <div className="trip-feature-grid">
-                {trips.map((t) => (
-                  <TripCard key={t._id} trip={t} />
+                {sortedTrips.map((t) => (
+                  <TripCard
+                    key={t._id}
+                    trip={t}
+                    onDeleted={(tripId) => setTrips((prev) => prev.filter((x) => String(x._id) !== String(tripId)))}
+                    onDeleteError={setError}
+                    onTripUpdated={(updated) =>
+                      setTrips((prev) =>
+                        prev.map((x) => (String(x._id) === String(updated._id) ? { ...x, ...updated } : x))
+                      )
+                    }
+                  />
                 ))}
               </div>
             ) : null}
           </div>
 
-          <aside className="concierge-rail" aria-label="Travel concierge">
+          <aside className="concierge-rail" aria-label="Roamify concierge">
             <div className="concierge-rail-inner">
               <div className="concierge-icon" aria-hidden>
                 <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">

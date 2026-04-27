@@ -38,7 +38,7 @@ const MOCK = {
 function buildSystemPrompt(user, trip) {
   const c = trip.constraints || {};
   return [
-    "You are a travel planning assistant for an MVP app.",
+    "You are a travel planning assistant for Roamify.",
     "Return ONLY valid JSON (no markdown fences) with keys: reply (string), suggestions (array).",
     "Each suggestion object: name, country, countryCode (ISO 3166-1 alpha-2), estCostMin, estCostMax, currency (ISO 4217 for the estimate), rationale (short string).",
     "Cost estimates are TOTAL trip ballparks for one traveler including typical economy flights from the user's origin idea and modest lodging—clearly rough.",

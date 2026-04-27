@@ -75,16 +75,39 @@ router.post("/", async (req, res) => {
 router.get("/:id", async (req, res) => {
   const trip = await Trip.findOne({ _id: req.params.id, userId: req.user._id }).lean();
   if (!trip) return res.status(404).json({ error: "Trip not found" });
-  const messages = await Message.find({ tripId: trip._id }).sort({ createdAt: 1 }).limit(100);
+
+  const reqLimit = parseInt(String(req.query.messagesLimit || "100"), 10);
+  const messagesLimit = Math.min(200, Math.max(1, Number.isFinite(reqLimit) ? reqLimit : 100));
+  const messagesTotal = await Message.countDocuments({ tripId: trip._id });
+  const maxSkip = Math.max(0, messagesTotal - messagesLimit);
+  let messagesSkip;
+  if (req.query.messagesSkip !== undefined && req.query.messagesSkip !== "") {
+    const p = parseInt(String(req.query.messagesSkip), 10);
+    messagesSkip = Number.isFinite(p) ? Math.max(0, Math.min(maxSkip, p)) : maxSkip;
+  } else {
+    messagesSkip = maxSkip;
+  }
+  const messages = await Message.find({ tripId: trip._id })
+    .sort({ createdAt: 1 })
+    .skip(messagesSkip)
+    .limit(messagesLimit)
+    .lean();
+
   let status = trip.status === "draft" ? "planning" : trip.status;
   if (!["planning", "booked", "dreaming", "archived"].includes(status)) status = "planning";
-  const messageCount = await Message.countDocuments({ tripId: trip._id });
   const cover =
     trip.coverImageUrl ||
     TRIP_COVER_IMAGES[Number.parseInt(String(trip._id).slice(-6), 16) % TRIP_COVER_IMAGES.length];
   res.json({
-    trip: { ...trip, status, coverImageUrl: cover, messageCount },
+    trip: { ...trip, status, coverImageUrl: cover, messageCount: messagesTotal },
     messages,
+    messagesPagination: {
+      total: messagesTotal,
+      skip: messagesSkip,
+      limit: messagesLimit,
+      returned: messages.length,
+      hasOlder: messagesSkip > 0,
+    },
   });
 });
 
@@ -101,6 +124,14 @@ router.patch("/:id", async (req, res) => {
   const trip = await Trip.findOne({ _id: req.params.id, userId: req.user._id });
   if (!trip) return res.status(404).json({ error: "Trip not found" });
 
+  let currentStatus = trip.status === "draft" ? "planning" : trip.status;
+  if (!["planning", "booked", "dreaming", "archived"].includes(currentStatus)) currentStatus = "planning";
+  const restoring =
+    parsed.data.status && ["planning", "booked", "dreaming"].includes(parsed.data.status);
+  if (currentStatus === "archived" && parsed.data.constraints && !restoring) {
+    return res.status(403).json({ error: "Restore this journey before editing constraints." });
+  }
+
   if (parsed.data.title != null) trip.title = parsed.data.title;
   if (parsed.data.status) trip.status = parsed.data.status;
   if (parsed.data.constraints) {
@@ -116,6 +147,21 @@ router.patch("/:id", async (req, res) => {
   res.json(trip);
 });
 
+router.delete("/:id", async (req, res) => {
+  const trip = await Trip.findOne({ _id: req.params.id, userId: req.user._id });
+  if (!trip) return res.status(404).json({ error: "Trip not found" });
+
+  let status = trip.status === "draft" ? "planning" : trip.status;
+  if (!["planning", "booked", "dreaming", "archived"].includes(status)) status = "planning";
+  if (status !== "planning") {
+    return res.status(403).json({ error: "Only journeys in planning can be deleted." });
+  }
+
+  await Message.deleteMany({ tripId: trip._id });
+  await trip.deleteOne();
+  res.status(204).send();
+});
+
 const messageSchema = z.object({
   text: z.string().min(1).max(8000),
 });
@@ -126,6 +172,14 @@ router.post("/:id/messages", async (req, res) => {
 
   const trip = await Trip.findOne({ _id: req.params.id, userId: req.user._id });
   if (!trip) return res.status(404).json({ error: "Trip not found" });
+
+  let tripStatus = trip.status === "draft" ? "planning" : trip.status;
+  if (!["planning", "booked", "dreaming", "archived"].includes(tripStatus)) tripStatus = "planning";
+  if (tripStatus === "archived") {
+    return res.status(403).json({
+      error: "This journey is archived. Restore it from the trip header to send messages.",
+    });
+  }
 
   const userDoc = await User.findById(req.user._id);
   if (!userDoc) return res.status(401).json({ error: "User not found" });

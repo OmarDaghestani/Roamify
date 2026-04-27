@@ -24,7 +24,7 @@ export default function LoginPage() {
     <div className="auth-page">
       <div className="auth-card">
         <h1>Sign in</h1>
-        <p className="muted">Local MERN travel MVP</p>
+        <p className="muted">Budget-aware trip planning</p>
         <form onSubmit={onSubmit} className="form">
           <label>
             Email
