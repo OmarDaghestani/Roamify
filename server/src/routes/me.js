@@ -19,6 +19,7 @@ const patchSchema = z.object({
     .object({
       homeCurrency: z.string().length(3).optional(),
       defaultTripBudget: z.number().positive().max(1_000_000).optional(),
+      dashboardTheme: z.enum(["cinematic-night", "sunlit-editorial"]).optional(),
     })
     .optional(),
 });
@@ -30,6 +31,7 @@ router.patch("/", async (req, res) => {
   const { settings } = parsed.data;
   if (settings?.homeCurrency) req.user.settings.homeCurrency = settings.homeCurrency.toUpperCase();
   if (settings?.defaultTripBudget != null) req.user.settings.defaultTripBudget = settings.defaultTripBudget;
+  if (settings?.dashboardTheme) req.user.settings.dashboardTheme = settings.dashboardTheme;
   await req.user.save();
 
   res.json({

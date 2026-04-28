@@ -7,6 +7,7 @@ const userSchema = new mongoose.Schema(
     settings: {
       homeCurrency: { type: String, default: "USD", uppercase: true, trim: true },
       defaultTripBudget: { type: Number, default: 2000 },
+      dashboardTheme: { type: String, enum: ["cinematic-night", "sunlit-editorial"], default: "cinematic-night" },
     },
   },
   { timestamps: true }

@@ -27,15 +27,43 @@ export function validateTripConstraints(form) {
   return { ok: errors.length === 0, errors };
 }
 
-/** Matches `server/src/routes/me.js` patch schema. */
-export function validateSettings({ homeCurrency, defaultTripBudget }) {
+/** Matches `server/src/routes/me.js` patch schema (theme only from Settings UI). */
+export function validateSettings({ dashboardTheme }) {
   const errors = [];
-  const cur = (homeCurrency ?? "").trim().toUpperCase();
-  if (cur.length !== 3) errors.push("Home currency must be exactly 3 letters (ISO 4217).");
+  if (dashboardTheme && !["cinematic-night", "sunlit-editorial"].includes(dashboardTheme)) {
+    errors.push("Theme must be Cinematic Night or Sunlit Editorial.");
+  }
+  return { ok: errors.length === 0, errors };
+}
 
-  const b = Number(defaultTripBudget);
-  if (!Number.isFinite(b) || b <= 0) errors.push("Default trip budget must be a positive number.");
-  else if (b > 1_000_000) errors.push("Default trip budget cannot exceed 1,000,000.");
+/** Journey title for PATCH (`server/src/routes/trips.js` title max 120). */
+export function validateTripTitle(title) {
+  const errors = [];
+  const t = (title ?? "").trim();
+  if (!t.length) errors.push("Journey title is required.");
+  else if (t.length > 120) errors.push("Title must be at most 120 characters.");
+  return { ok: errors.length === 0, errors };
+}
+
+/** New journey modal — title length + full constraints (`server/src/routes/trips.js`). */
+export function validateNewJourneyModal(fields) {
+  const errors = [];
+  const t = (fields.title ?? "").trim();
+  if (t.length > 120) errors.push("Title must be at most 120 characters.");
+
+  const partyRaw = fields.partySize;
+  const partyNum =
+    partyRaw === "" || partyRaw === undefined || partyRaw === null ? 1 : Number(partyRaw);
+
+  const tc = validateTripConstraints({
+    origin: fields.origin ?? "",
+    startDate: fields.startDate ?? "",
+    endDate: fields.endDate ?? "",
+    maxTotalBudget: Number(fields.maxTotalBudget),
+    currency: fields.currency,
+    partySize: partyNum,
+  });
+  if (!tc.ok) errors.push(...tc.errors);
 
   return { ok: errors.length === 0, errors };
 }

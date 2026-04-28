@@ -7,6 +7,11 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  useEffect(() => {
+    const nextTheme = user?.settings?.dashboardTheme || "cinematic-night";
+    document.documentElement.setAttribute("data-dashboard-theme", nextTheme);
+  }, [user?.settings?.dashboardTheme]);
+
   const refresh = useCallback(async () => {
     const token = getToken();
     if (!token) {

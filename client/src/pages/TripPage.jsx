@@ -4,7 +4,7 @@ import { api } from "../api.js";
 import ChatMessage from "../components/ChatMessage.jsx";
 import ConfirmModal from "../components/ConfirmModal.jsx";
 import { currencySelectOptions, currencySelectValue } from "../constants/currencies.js";
-import { validateTripConstraints } from "../lib/validation.js";
+import { validateTripConstraints, validateTripTitle } from "../lib/validation.js";
 
 const MESSAGES_PAGE = 100;
 
@@ -41,6 +41,7 @@ export default function TripPage() {
   const [archiving, setArchiving] = useState(false);
   const [confirm, setConfirm] = useState(null);
   const [form, setForm] = useState({
+    title: "",
     origin: "",
     startDate: "",
     endDate: "",
@@ -62,6 +63,7 @@ export default function TripPage() {
       setLastSuggestions(lastAssistant?.metadata?.suggestions || []);
       const c = data.trip?.constraints || {};
       setForm({
+        title: data.trip?.title || "",
         origin: c.origin || "",
         startDate: c.startDate || "",
         endDate: c.endDate || "",
@@ -131,6 +133,11 @@ export default function TripPage() {
       setError("Restore this journey before editing constraints.");
       return;
     }
+    const titleV = validateTripTitle(form.title);
+    if (!titleV.ok) {
+      setError(titleV.errors.join(" "));
+      return;
+    }
     const v = validateTripConstraints(form);
     if (!v.ok) {
       setError(v.errors.join(" "));
@@ -141,6 +148,7 @@ export default function TripPage() {
       const updated = await api(`/api/trips/${id}`, {
         method: "PATCH",
         body: JSON.stringify({
+          title: form.title.trim(),
           constraints: {
             origin: form.origin,
             startDate: form.startDate,
@@ -301,6 +309,16 @@ export default function TripPage() {
           <h2>Trip constraints</h2>
           <p className="muted small">Used when you ask for destinations “within budget”. Figures are estimates only.</p>
           <form onSubmit={saveTrip} className="form compact">
+            <label>
+              Journey title
+              <input
+                value={form.title}
+                onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
+                maxLength={120}
+                disabled={isArchived}
+                autoComplete="off"
+              />
+            </label>
             <label>
               Origin (city or airport code)
               <input

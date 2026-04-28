@@ -4,7 +4,7 @@ import { api } from "../api.js";
 import ConfirmModal from "./ConfirmModal.jsx";
 import { itineraryProgressPercent, STATUS_LABELS } from "../lib/tripProgress.js";
 
-export default function TripCard({ trip, onDeleted, onDeleteError, onTripUpdated }) {
+export default function TripCard({ trip, index = 0, onDeleted, onDeleteError, onTripUpdated }) {
   const status = trip.status || "planning";
   const label = STATUS_LABELS[status] || STATUS_LABELS.planning;
   const pct = itineraryProgressPercent(trip, trip.messageCount);
@@ -50,8 +50,10 @@ export default function TripCard({ trip, onDeleted, onDeleteError, onTripUpdated
     }
   }
 
+  const editorialClass = `trip-feature-card-wrapper trip-feature-card-wrapper--${index % 5}`;
+
   return (
-    <div className="trip-feature-card-wrapper">
+    <div className={editorialClass} role="listitem">
       <Link to={`/trips/${trip._id}`} className="trip-feature-card">
         <div className="trip-feature-media">
           <div className="trip-feature-media-fallback" aria-hidden />
