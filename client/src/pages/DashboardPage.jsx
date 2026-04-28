@@ -20,6 +20,7 @@ export default function DashboardPage() {
   const [newJourneyOpen, setNewJourneyOpen] = useState(false);
   const [createJourneyBusy, setCreateJourneyBusy] = useState(false);
   const [createJourneyError, setCreateJourneyError] = useState("");
+  const [tripListFilter, setTripListFilter] = useState("all");
 
   const load = useCallback(async () => {
     setError("");
@@ -38,13 +39,47 @@ export default function DashboardPage() {
   }, [load]);
 
   const sortedTrips = useMemo(() => {
+    const openRank = (s) => {
+      const v = s === "draft" ? "planning" : s || "planning";
+      if (v === "planning") return 0;
+      if (v === "booked") return 1;
+      if (v === "dreaming") return 2;
+      return 3;
+    };
+    const byUpdatedDesc = (a, b) => new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0);
     const open = trips.filter((t) => t.status !== "archived");
     const archived = trips.filter((t) => t.status === "archived");
-    return [...open, ...archived];
+    const openSorted = [...open].sort((a, b) => {
+      const ra = openRank(a.status);
+      const rb = openRank(b.status);
+      if (ra !== rb) return ra - rb;
+      return byUpdatedDesc(a, b);
+    });
+    const archivedSorted = [...archived].sort(byUpdatedDesc);
+    return [...openSorted, ...archivedSorted];
   }, [trips]);
 
+  const tripFilterCounts = useMemo(() => {
+    const planning = trips.filter((t) => (t.status === "draft" ? "planning" : t.status || "planning") === "planning").length;
+    const archived = trips.filter((t) => t.status === "archived").length;
+    return { all: trips.length, planning, archived };
+  }, [trips]);
+
+  const filteredTrips = useMemo(() => {
+    if (tripListFilter === "planning") {
+      return sortedTrips.filter((t) => (t.status === "draft" ? "planning" : t.status || "planning") === "planning");
+    }
+    if (tripListFilter === "archived") {
+      return sortedTrips.filter((t) => t.status === "archived");
+    }
+    return sortedTrips;
+  }, [sortedTrips, tripListFilter]);
+
   const latestTripId = sortedTrips.find((t) => t.status !== "archived")?._id || sortedTrips[0]?._id;
-  const planningTrips = useMemo(() => sortedTrips.filter((t) => (t.status || "planning") === "planning"), [sortedTrips]);
+  const planningTrips = useMemo(
+    () => sortedTrips.filter((t) => (t.status === "draft" ? "planning" : t.status || "planning") === "planning"),
+    [sortedTrips]
+  );
 
   function openNewJourneyModal() {
     setCreateJourneyError("");
@@ -188,6 +223,39 @@ export default function DashboardPage() {
           </div>
         </div>
 
+        <div className="dashboard-sky-actors" aria-hidden>
+          <div className="dashboard-sky-actors__night">
+            <div className="dashboard-sky-ufo">
+              <svg
+                className="dashboard-ufo-svg"
+                width="120"
+                height="78"
+                viewBox="0 0 56 36"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <ellipse cx="28" cy="24" rx="22" ry="7" fill="url(#dashboard-ufo-disc)" opacity="0.95" />
+                <ellipse cx="28" cy="17" rx="14" ry="10" fill="url(#dashboard-ufo-dome)" />
+                <ellipse cx="28" cy="13" rx="8" ry="5" fill="#e2e8f0" opacity="0.55" />
+                <circle cx="14" cy="24" r="2" fill="#4ade80" className="dashboard-ufo-light" />
+                <circle cx="28" cy="26" r="2.2" fill="#2dd4bf" className="dashboard-ufo-light" />
+                <circle cx="42" cy="24" r="2" fill="#4ade80" className="dashboard-ufo-light" />
+                <defs>
+                  <linearGradient id="dashboard-ufo-disc" x1="6" y1="24" x2="50" y2="24" gradientUnits="userSpaceOnUse">
+                    <stop stopColor="#475569" />
+                    <stop offset="0.5" stopColor="#64748b" />
+                    <stop offset="1" stopColor="#334155" />
+                  </linearGradient>
+                  <linearGradient id="dashboard-ufo-dome" x1="14" y1="10" x2="42" y2="22" gradientUnits="userSpaceOnUse">
+                    <stop stopColor="#94a3b8" />
+                    <stop offset="1" stopColor="#cbd5e1" />
+                  </linearGradient>
+                </defs>
+              </svg>
+            </div>
+          </div>
+        </div>
+
         <div className="dashboard-content">
           <div className="dashboard-layout">
           <div className="dashboard-main">
@@ -225,54 +293,73 @@ export default function DashboardPage() {
             ) : null}
 
             {!loading && trips.length > 0 ? (
-              <div className="trip-feature-grid" role="list" aria-label="Your journeys">
-                {sortedTrips.map((t, index) => (
-                  <TripCard
-                    key={t._id}
-                    trip={t}
-                    index={index}
-                    onDeleted={(tripId) => setTrips((prev) => prev.filter((x) => String(x._id) !== String(tripId)))}
-                    onDeleteError={setError}
-                    onTripUpdated={(updated) =>
-                      setTrips((prev) =>
-                        prev.map((x) => (String(x._id) === String(updated._id) ? { ...x, ...updated } : x))
-                      )
-                    }
-                  />
-                ))}
-              </div>
+              <>
+                {trips.length >= 2 ? (
+                  <div className="dashboard-trip-filter" role="tablist" aria-label="Filter journeys">
+                    <button
+                      type="button"
+                      className={`dashboard-trip-filter__btn${tripListFilter === "all" ? " is-active" : ""}`}
+                      role="tab"
+                      aria-selected={tripListFilter === "all"}
+                      onClick={() => setTripListFilter("all")}
+                    >
+                      All
+                      <span className="dashboard-trip-filter__count">{tripFilterCounts.all}</span>
+                    </button>
+                    <button
+                      type="button"
+                      className={`dashboard-trip-filter__btn${tripListFilter === "planning" ? " is-active" : ""}`}
+                      role="tab"
+                      aria-selected={tripListFilter === "planning"}
+                      onClick={() => setTripListFilter("planning")}
+                    >
+                      Planning
+                      <span className="dashboard-trip-filter__count">{tripFilterCounts.planning}</span>
+                    </button>
+                    <button
+                      type="button"
+                      className={`dashboard-trip-filter__btn${tripListFilter === "archived" ? " is-active" : ""}`}
+                      role="tab"
+                      aria-selected={tripListFilter === "archived"}
+                      onClick={() => setTripListFilter("archived")}
+                    >
+                      Archive
+                      <span className="dashboard-trip-filter__count">{tripFilterCounts.archived}</span>
+                    </button>
+                  </div>
+                ) : null}
+                {filteredTrips.length === 0 ? (
+                  <div className="dashboard-filter-empty" role="status">
+                    <p className="dashboard-filter-empty__text">
+                      {tripListFilter === "planning"
+                        ? "No journeys are in planning right now."
+                        : "No archived journeys yet."}
+                    </p>
+                    <button type="button" className="btn secondary dashboard-filter-empty__reset" onClick={() => setTripListFilter("all")}>
+                      Show all journeys
+                    </button>
+                  </div>
+                ) : (
+                  <div className="trip-feature-grid" role="list" aria-label="Your journeys">
+                    {filteredTrips.map((t, index) => (
+                      <TripCard
+                        key={t._id}
+                        trip={t}
+                        index={index}
+                        onDeleted={(tripId) => setTrips((prev) => prev.filter((x) => String(x._id) !== String(tripId)))}
+                        onDeleteError={setError}
+                        onTripUpdated={(updated) =>
+                          setTrips((prev) =>
+                            prev.map((x) => (String(x._id) === String(updated._id) ? { ...x, ...updated } : x))
+                          )
+                        }
+                      />
+                    ))}
+                  </div>
+                )}
+              </>
             ) : null}
           </div>
-
-          <aside className="concierge-rail" aria-label="Roamify concierge">
-            <div className="concierge-rail-inner">
-              <div className="concierge-icon" aria-hidden>
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path
-                    d="M12 3C8.5 3 5.5 5.5 4 9c2 4 4 9 8 12 4-3 6-8 8-12-1.5-3.5-4.5-6-8-6z"
-                    stroke="currentColor"
-                    strokeWidth="1.35"
-                    strokeLinejoin="round"
-                  />
-                  <circle cx="12" cy="9" r="2.2" stroke="currentColor" strokeWidth="1.25" />
-                </svg>
-              </div>
-              <h2 className="concierge-heading">Concierge planner</h2>
-              <p className="concierge-copy">
-                Every journey has a chat workspace—destinations within budget, live weather, FX, and
-                language notes.
-              </p>
-              {latestTripId ? (
-                <Link to={`/trips/${latestTripId}#planner-chat`} className="btn concierge-cta">
-                  Open planner
-                </Link>
-              ) : (
-                <button type="button" className="btn concierge-cta" onClick={openNewJourneyModal}>
-                  Start &amp; open planner
-                </button>
-              )}
-            </div>
-          </aside>
           </div>
         </div>
       </div>
