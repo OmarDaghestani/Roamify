@@ -24,6 +24,28 @@ function formatDateChip(iso) {
   }
 }
 
+function tripStatusLabel(status) {
+  switch (status) {
+    case "archived":
+      return "Archived";
+    case "booked":
+      return "Booked";
+    case "dreaming":
+      return "Dreaming";
+    default:
+      return "Planning";
+  }
+}
+
+function ManifestChip({ label, children }) {
+  return (
+    <div className="trip-manifest-chip">
+      <span className="trip-manifest-chip__label">{label}</span>
+      <span className="trip-manifest-chip__value">{children}</span>
+    </div>
+  );
+}
+
 export default function TripPage() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -121,7 +143,10 @@ export default function TripPage() {
     }
   }, [loading, trip, id]);
 
-  const tripStatus = trip?.status === "draft" ? "planning" : trip?.status || "planning";
+  const tripStatusRaw = trip?.status === "draft" ? "planning" : trip?.status || "planning";
+  const tripStatusKey = String(tripStatusRaw).toLowerCase();
+  const tripStatus =
+    tripStatusKey === "booked" || tripStatusKey === "dreaming" || tripStatusKey === "archived" ? tripStatusKey : "planning";
   const isArchived = tripStatus === "archived";
   const canDeleteTrip = trip && tripStatus === "planning";
   const canArchive = trip && !isArchived;
@@ -245,10 +270,15 @@ export default function TripPage() {
 
   if (loading) {
     return (
-      <div className="page trip-page">
-        <div className="trip-page-skeleton" aria-hidden>
+      <div className="page trip-layout trip-page trip-page--loading">
+        <div className="trip-atmosphere" aria-hidden />
+        <header className="trip-hero trip-hero--skeleton" aria-hidden>
+          <div className="sk-line sk-line--breadcrumb" />
+          <div className="sk-line sk-line--eyebrow" />
           <div className="sk-line sk-line--title" />
-          <div className="sk-line sk-line--sm" />
+          <div className="sk-line sk-line--manifest" />
+        </header>
+        <div className="trip-page-skeleton trip-page-skeleton--body" aria-hidden>
           <div className="sk-grid">
             <div className="sk-card" />
             <div className="sk-card sk-card--tall" />
@@ -274,38 +304,59 @@ export default function TripPage() {
 
   return (
     <div className="page trip-layout trip-page">
-      <div className="breadcrumb muted small">
-        <Link to="/">Trips</Link> / {trip.title}
-      </div>
-      <div className="trip-title-row">
-        <h1>{trip.title}</h1>
-        <div className="trip-title-actions">
-          {canRestore ? (
-            <button type="button" className="btn secondary" onClick={restoreTrip} disabled={archiving}>
-              {archiving ? "…" : "Restore journey"}
-            </button>
-          ) : null}
-          {canArchive ? (
-            <button type="button" className="btn secondary" onClick={() => setConfirm("archive")} disabled={archiving}>
-              Archive journey
-            </button>
-          ) : null}
-          {canDeleteTrip ? (
-            <button type="button" className="btn danger trip-delete-page" onClick={() => setConfirm("delete")} disabled={deleting}>
-              Delete journey
-            </button>
-          ) : null}
+      <div className="trip-atmosphere" aria-hidden />
+      <header className="trip-hero">
+        <nav className="breadcrumb muted small trip-hero-breadcrumb" aria-label="Breadcrumb">
+          <Link to="/">Trips</Link>
+          <span className="trip-hero-breadcrumb-sep" aria-hidden>
+            /
+          </span>
+          <span className="trip-hero-breadcrumb-current">{trip.title}</span>
+        </nav>
+        <p className="trip-hero-eyebrow">Journey</p>
+        <div className="trip-hero-head">
+          <h1 className="trip-hero-title">{trip.title}</h1>
+          <div className="trip-hero-actions">
+            {canRestore ? (
+              <button type="button" className="btn secondary" onClick={restoreTrip} disabled={archiving}>
+                {archiving ? "…" : "Restore journey"}
+              </button>
+            ) : null}
+            {canArchive ? (
+              <button type="button" className="btn secondary" onClick={() => setConfirm("archive")} disabled={archiving}>
+                Archive journey
+              </button>
+            ) : null}
+            {canDeleteTrip ? (
+              <button type="button" className="btn danger trip-delete-page" onClick={() => setConfirm("delete")} disabled={deleting}>
+                Delete journey
+              </button>
+            ) : null}
+          </div>
         </div>
-      </div>
+        <div className="trip-hero-manifest" aria-label="Journey summary">
+          <ManifestChip label="Origin">{c.origin?.trim() ? c.origin : "TBD"}</ManifestChip>
+          <ManifestChip label="Dates">
+            {formatDateChip(c.startDate)} → {formatDateChip(c.endDate)}
+          </ManifestChip>
+          <ManifestChip label="Budget">{budgetLabel}</ManifestChip>
+          <ManifestChip label="Party">{c.partySize ?? 1}</ManifestChip>
+          <span className={`trip-status-pill trip-status-pill--${tripStatus}`}>{tripStatusLabel(tripStatus)}</span>
+        </div>
+      </header>
+
+      <div className="trip-hero-tear" aria-hidden />
 
       {isArchived ? (
-        <p className="callout callout--muted" role="status">
+        <p className="callout callout--muted trip-archived-callout" role="status">
           This journey is archived. Planner chat is read-only until you restore it.
         </p>
       ) : null}
 
+      <div className="trip-body">
       <div className="trip-grid">
-        <section className="card">
+        <section className="card trip-constraints-card">
+          <p className="trip-panel-eyebrow">Brief</p>
           <h2>Trip constraints</h2>
           <p className="muted small">Used when you ask for destinations “within budget”. Figures are estimates only.</p>
           <form onSubmit={saveTrip} className="form compact">
@@ -390,7 +441,8 @@ export default function TripPage() {
           </form>
         </section>
 
-        <section id="planner-chat" className="card chat-card">
+        <section id="planner-chat" className="card chat-card trip-chat-card">
+          <p className="trip-panel-eyebrow">Live line</p>
           <h2>Planner chat</h2>
           <p className="muted small">Try: “Suggest summer destinations within my budget for a beach trip.”</p>
 
@@ -444,7 +496,8 @@ export default function TripPage() {
         </section>
       </div>
 
-      <section className="card suggestions">
+      <section className="card suggestions trip-destinations">
+        <p className="trip-panel-eyebrow">Concierge atlas</p>
         <h2>Destination cards</h2>
         <p className="muted small">
           Weather (Open-Meteo), FX (Frankfurter), and language notes are indicative only—not booking advice. Model cost
@@ -473,6 +526,7 @@ export default function TripPage() {
           ))}
         </div>
       </section>
+      </div>
 
       <ConfirmModal
         open={confirm === "delete"}

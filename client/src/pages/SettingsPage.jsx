@@ -51,7 +51,7 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="page narrow settings-page">
+    <div className="page settings-page">
       <header className="settings-hero">
         <p className="settings-eyebrow">Roamify</p>
         <h1 className="settings-title">Settings</h1>
