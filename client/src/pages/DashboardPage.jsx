@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { api } from "../api.js";
+import { api, resolveImageUrl } from "../api.js";
 import { useAuth } from "../auth/AuthContext.jsx";
 import ConfirmModal from "../components/ConfirmModal.jsx";
 import DashboardCloudIllustration from "../components/DashboardCloudIllustration.jsx";
@@ -10,6 +10,7 @@ import TripCard from "../components/TripCard.jsx";
 import { DASHBOARD_HERO_IMAGE } from "../constants/dashboardHero.js";
 
 export default function DashboardPage() {
+  const heroImageUrl = resolveImageUrl(DASHBOARD_HERO_IMAGE);
   const navigate = useNavigate();
   const { user, updateMe } = useAuth();
   const [trips, setTrips] = useState([]);
@@ -157,7 +158,7 @@ export default function DashboardPage() {
     <div className="dashboard-page">
       <section className="dashboard-hero dashboard-hero--above-atmosphere" aria-label="Featured destination backdrop">
         <div className="dashboard-hero-bg">
-          <img src={DASHBOARD_HERO_IMAGE} alt="" className="dashboard-hero-img" fetchPriority="high" />
+          <img src={heroImageUrl} alt="" className="dashboard-hero-img" fetchPriority="high" />
           <div className="dashboard-hero-blur" aria-hidden />
         </div>
         <div className="dashboard-hero-scrim" aria-hidden />

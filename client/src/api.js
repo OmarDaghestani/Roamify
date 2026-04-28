@@ -13,6 +13,33 @@ export function apiUrl(path) {
   return base ? `${base}${p}` : p;
 }
 
+/**
+ * Normalize image URLs for production deployments:
+ * - relative paths resolve against API base (when configured)
+ * - protocol-relative URLs inherit current protocol
+ * - http URLs are upgraded on https pages to avoid mixed-content blocking
+ */
+export function resolveImageUrl(rawUrl) {
+  const value = String(rawUrl ?? "").trim();
+  if (!value) return "";
+
+  if (value.startsWith("//")) {
+    if (typeof window !== "undefined" && window.location?.protocol) {
+      return `${window.location.protocol}${value}`;
+    }
+    return `https:${value}`;
+  }
+
+  if (/^https?:\/\//i.test(value)) {
+    if (typeof window !== "undefined" && window.location?.protocol === "https:" && value.startsWith("http://")) {
+      return `https://${value.slice("http://".length)}`;
+    }
+    return value;
+  }
+
+  return apiUrl(value.startsWith("/") ? value : `/${value}`);
+}
+
 export function getToken() {
   return localStorage.getItem(TOKEN_KEY);
 }

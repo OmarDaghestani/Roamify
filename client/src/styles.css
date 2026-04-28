@@ -3233,7 +3233,7 @@ button.fab-planner {
   padding: 2.5rem 1.25rem 2rem;
   border-radius: 20px;
   border: 1px dashed rgba(198, 166, 100, 0.22);
-  background: rgba(6, 18, 30, 0.35);
+  background: rgba(6, 18, 30, 0.2);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   position: relative;
@@ -3274,6 +3274,8 @@ button.fab-planner {
 .dashboard-empty-copy {
   max-width: 28rem;
   margin: 0 auto 0.25rem;
+  color: rgba(220, 236, 245, 0.98);
+  text-shadow: 0 1px 10px rgba(0, 0, 0, 0.3);
   position: relative;
   z-index: 1;
 }

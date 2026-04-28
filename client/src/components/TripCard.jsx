@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import { api } from "../api.js";
+import { api, resolveImageUrl } from "../api.js";
 import ConfirmModal from "./ConfirmModal.jsx";
 import { itineraryProgressPercent, STATUS_LABELS } from "../lib/tripProgress.js";
 
@@ -8,7 +8,7 @@ export default function TripCard({ trip, index = 0, onDeleted, onDeleteError, on
   const status = trip.status || "planning";
   const label = STATUS_LABELS[status] || STATUS_LABELS.planning;
   const pct = itineraryProgressPercent(trip, trip.messageCount);
-  const img = trip.coverImageUrl || "";
+  const img = resolveImageUrl(trip.coverImageUrl);
   const budget = trip.constraints?.maxTotalBudget;
   const cur = trip.constraints?.currency || "USD";
   const canDelete = status === "planning";
