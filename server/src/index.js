@@ -9,9 +9,29 @@ import tripRoutes from "./routes/trips.js";
 import { Trip } from "./models/Trip.js";
 
 const app = express();
+const defaultCorsOrigins = ["http://localhost:5173", "http://127.0.0.1:5173"];
+
+function isHttpsVercelAppOrigin(origin) {
+  if (!config.corsAllowVercelSubdomains) return false;
+  try {
+    const u = new URL(origin);
+    if (u.protocol !== "https:") return false;
+    return u.hostname === "vercel.app" || u.hostname.endsWith(".vercel.app");
+  } catch {
+    return false;
+  }
+}
+
 app.use(
   cors({
-    origin: ["http://localhost:5173", "http://127.0.0.1:5173"],
+    origin(origin, callback) {
+      if (!origin) return callback(null, true);
+      const normalized = origin.replace(/\/+$/, "");
+      if (defaultCorsOrigins.includes(normalized)) return callback(null, true);
+      if (config.corsOrigins.includes(normalized)) return callback(null, true);
+      if (isHttpsVercelAppOrigin(normalized)) return callback(null, true);
+      return callback(null, false);
+    },
     credentials: true,
   })
 );
