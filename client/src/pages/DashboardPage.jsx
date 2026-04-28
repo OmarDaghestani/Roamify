@@ -3,6 +3,8 @@ import { Link, useNavigate } from "react-router-dom";
 import { api } from "../api.js";
 import { useAuth } from "../auth/AuthContext.jsx";
 import ConfirmModal from "../components/ConfirmModal.jsx";
+import DashboardCloudIllustration from "../components/DashboardCloudIllustration.jsx";
+import DashboardSunIllustration from "../components/DashboardSunIllustration.jsx";
 import NewJourneyModal from "../components/NewJourneyModal.jsx";
 import TripCard from "../components/TripCard.jsx";
 import { DASHBOARD_HERO_IMAGE } from "../constants/dashboardHero.js";
@@ -118,7 +120,7 @@ export default function DashboardPage() {
 
   return (
     <div className="dashboard-page">
-      <section className="dashboard-hero" aria-label="Featured destination backdrop">
+      <section className="dashboard-hero dashboard-hero--above-atmosphere" aria-label="Featured destination backdrop">
         <div className="dashboard-hero-bg">
           <img src={DASHBOARD_HERO_IMAGE} alt="" className="dashboard-hero-img" fetchPriority="high" />
           <div className="dashboard-hero-blur" aria-hidden />
@@ -148,8 +150,46 @@ export default function DashboardPage() {
         </div>
       </section>
 
-      <div className="dashboard-content">
-        <div className="dashboard-layout">
+      <div className="dashboard-content-wrap">
+        <div className="dashboard-atmosphere" aria-hidden="true">
+          <div className="dashboard-atmosphere__night">
+            <div className="dashboard-atmosphere__moon" />
+            <div className="dashboard-atmosphere__starfield" />
+            <div className="dashboard-atmosphere__meteors">
+              <span className="dashboard-meteor dashboard-meteor--1" />
+              <span className="dashboard-meteor dashboard-meteor--2" />
+              <span className="dashboard-meteor dashboard-meteor--3" />
+              <span className="dashboard-meteor dashboard-meteor--4" />
+              <span className="dashboard-meteor dashboard-meteor--5" />
+              <span className="dashboard-meteor dashboard-meteor--6" />
+              <span className="dashboard-meteor dashboard-meteor--7 dashboard-meteor--alt" />
+              <span className="dashboard-meteor dashboard-meteor--8 dashboard-meteor--alt" />
+              <span className="dashboard-meteor dashboard-meteor--9" />
+              <span className="dashboard-meteor dashboard-meteor--10 dashboard-meteor--alt" />
+              <span className="dashboard-meteor dashboard-meteor--11" />
+              <span className="dashboard-meteor dashboard-meteor--12 dashboard-meteor--alt" />
+            </div>
+          </div>
+          <div className="dashboard-atmosphere__day">
+            <div className="dashboard-atmosphere__sun">
+              <DashboardSunIllustration />
+            </div>
+            <div className="dashboard-atmosphere__clouds">
+              <div className="dashboard-cloud dashboard-cloud--1">
+                <DashboardCloudIllustration variant="leading" />
+              </div>
+              <div className="dashboard-cloud dashboard-cloud--2">
+                <DashboardCloudIllustration variant="mid" />
+              </div>
+              <div className="dashboard-cloud dashboard-cloud--3">
+                <DashboardCloudIllustration variant="bank" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="dashboard-content">
+          <div className="dashboard-layout">
           <div className="dashboard-main">
             {loading ? (
               <div className="dashboard-skeleton-grid" aria-hidden>
@@ -233,6 +273,7 @@ export default function DashboardPage() {
               )}
             </div>
           </aside>
+          </div>
         </div>
       </div>
 
