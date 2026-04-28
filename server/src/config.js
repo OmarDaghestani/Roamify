@@ -7,7 +7,15 @@ function parseCorsOrigins(raw) {
   if (!raw || typeof raw !== "string") return [];
   return raw
     .split(",")
-    .map((s) => s.trim().replace(/\/+$/, ""))
+    .map((s) => s.trim().replace(/^["']|["']$/g, ""))
+    .map((s) => {
+      if (!s) return "";
+      try {
+        return new URL(s).origin;
+      } catch {
+        return s.replace(/\/+$/, "");
+      }
+    })
     .filter(Boolean);
 }
 

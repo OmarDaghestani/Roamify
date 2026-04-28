@@ -158,7 +158,13 @@ export default function DashboardPage() {
     <div className="dashboard-page">
       <section className="dashboard-hero dashboard-hero--above-atmosphere" aria-label="Featured destination backdrop">
         <div className="dashboard-hero-bg">
-          <img src={heroImageUrl} alt="" className="dashboard-hero-img" fetchPriority="high" />
+          <img
+            src={heroImageUrl}
+            alt=""
+            className="dashboard-hero-img"
+            fetchPriority="high"
+            referrerPolicy="no-referrer"
+          />
           <div className="dashboard-hero-blur" aria-hidden />
         </div>
         <div className="dashboard-hero-scrim" aria-hidden />

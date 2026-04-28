@@ -58,7 +58,14 @@ export default function TripCard({ trip, index = 0, onDeleted, onDeleteError, on
         <div className="trip-feature-media">
           <div className="trip-feature-media-fallback" aria-hidden />
           {img ? (
-            <img src={img} alt="" className="trip-feature-img" loading="lazy" decoding="async" />
+            <img
+              src={img}
+              alt=""
+              className="trip-feature-img"
+              loading="lazy"
+              decoding="async"
+              referrerPolicy="no-referrer"
+            />
           ) : null}
           <span className={`trip-status-badge trip-status-badge--${status}`}>{label}</span>
         </div>
