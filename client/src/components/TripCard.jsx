@@ -1,14 +1,24 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { api, resolveImageUrl } from "../api.js";
 import ConfirmModal from "./ConfirmModal.jsx";
-import { itineraryProgressPercent, STATUS_LABELS } from "../lib/tripProgress.js";
+import {
+  itineraryProgressPercent,
+  STATUS_LABELS,
+} from "../lib/tripProgress.js";
+import { tripImageFallback } from "../lib/imageFallbacks.js";
 
-export default function TripCard({ trip, index = 0, onDeleted, onDeleteError, onTripUpdated }) {
+export default function TripCard({
+  trip,
+  index = 0,
+  onDeleted,
+  onDeleteError,
+  onTripUpdated,
+}) {
   const status = trip.status || "planning";
   const label = STATUS_LABELS[status] || STATUS_LABELS.planning;
   const pct = itineraryProgressPercent(trip, trip.messageCount);
-  const img = resolveImageUrl(trip.coverImageUrl);
+  const primaryImg = resolveImageUrl(trip.coverImageUrl);
   const budget = trip.constraints?.maxTotalBudget;
   const cur = trip.constraints?.currency || "USD";
   const canDelete = status === "planning";
@@ -16,6 +26,21 @@ export default function TripCard({ trip, index = 0, onDeleted, onDeleteError, on
   const [deleting, setDeleting] = useState(false);
   const [archiving, setArchiving] = useState(false);
   const [confirm, setConfirm] = useState(null);
+  const [imgSrc, setImgSrc] = useState(primaryImg);
+
+  useEffect(() => {
+    setImgSrc(primaryImg);
+  }, [primaryImg]);
+
+  function handleImageError() {
+    if (!imgSrc) return;
+    const fallback = tripImageFallback(trip._id || trip.title);
+    if (imgSrc === fallback) {
+      setImgSrc("");
+      return;
+    }
+    setImgSrc(fallback);
+  }
 
   async function handleDeleteConfirm() {
     if (!canDelete || deleting) return;
@@ -57,20 +82,25 @@ export default function TripCard({ trip, index = 0, onDeleted, onDeleteError, on
       <Link to={`/trips/${trip._id}`} className="trip-feature-card">
         <div className="trip-feature-media">
           <div className="trip-feature-media-fallback" aria-hidden />
-          {img ? (
+          {imgSrc ? (
             <img
-              src={img}
+              src={imgSrc}
               alt=""
               className="trip-feature-img"
               loading="lazy"
               decoding="async"
               referrerPolicy="no-referrer"
+              onError={handleImageError}
             />
           ) : null}
-          <span className={`trip-status-badge trip-status-badge--${status}`}>{label}</span>
+          <span className={`trip-status-badge trip-status-badge--${status}`}>
+            {label}
+          </span>
         </div>
         <div className="trip-feature-body">
-          <h3 className="trip-feature-title">{trip.title || "Untitled journey"}</h3>
+          <h3 className="trip-feature-title">
+            {trip.title || "Untitled journey"}
+          </h3>
           <p className="trip-feature-meta">
             {budget != null ? (
               <>
@@ -80,11 +110,22 @@ export default function TripCard({ trip, index = 0, onDeleted, onDeleteError, on
                 <span className="trip-feature-dot">·</span>
               </>
             ) : null}
-            {trip.constraints?.origin ? <span>From {trip.constraints.origin}</span> : <span>Origin TBD</span>}
+            {trip.constraints?.origin ? (
+              <span>From {trip.constraints.origin}</span>
+            ) : (
+              <span>Origin TBD</span>
+            )}
           </p>
-          <div className="trip-progress" role="img" aria-label={`Planning progress about ${pct} percent`}>
+          <div
+            className="trip-progress"
+            role="img"
+            aria-label={`Planning progress about ${pct} percent`}
+          >
             <div className="trip-progress-track">
-              <div className="trip-progress-fill" style={{ width: `${pct}%` }} />
+              <div
+                className="trip-progress-fill"
+                style={{ width: `${pct}%` }}
+              />
             </div>
             <span className="trip-progress-label">Itinerary progress</span>
             <span className="trip-progress-pct">{pct}%</span>
